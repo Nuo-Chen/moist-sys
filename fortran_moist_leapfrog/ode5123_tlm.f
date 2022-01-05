@@ -55,6 +55,7 @@ C
         bsd(t+1) = bsd(t-1) - dt*2*ns**2*wd(t)
         bs(t+1) = bs(t-1) - ns*ns*w(t)*2*dt
       ENDDO
+      write(15,*) wd(nt),bud(nt), bsd(nt)
 C
       RETURN
       END
