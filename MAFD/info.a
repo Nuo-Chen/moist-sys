@@ -1,0 +1,22 @@
+gcc -c adstack.c
+# -c just compile without making .exe
+# should create a adstack.o file
+# include that in fortran compilation so it knows what to call
+ 
+# remember to write a main.f to call the subroutine
+gfortran -o .exe ode.f .o
+# gfortran make executable(-o) name_of_the_executable.exe name_of_the_main_program.f compiled_c_program.o
+
+# intial condition
+# forward
+nt = 50000
+dt = 0.1
+Nu = 1.2e-1      # Holton pp 58
+Ns = Nu/10.
+w[0] = 0.1
+bu[0] = 0
+bs[0] = 0
+
+a_w[-1] = 1
+
+/Users/morgan/moist
