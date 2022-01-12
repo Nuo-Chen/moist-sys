@@ -3,7 +3,7 @@ c234567
 
       IMPLICIT NONE
       INTEGER nt, t, j, it
-      parameter(nt = 5000)
+      parameter(nt = 50000)
       REAL dt, nu, ns, right, left
       REAL w(nt+1), bu(nt+1), bs(nt+1)
       REAL wd(nt), bud(nt), bsd(nt)
@@ -12,19 +12,20 @@ c234567
       REAL w0d, bu0d, bs0d
       REAL w0b, bu0b, bs0b
       
-      nu = 0.012
-      ns = 0.0012
+      nu = 0.12
+      ns = 0.012
       dt = 0.1
 C                                                                                                                                 
 
-      w0d = 0.01
+      
       w0 = 0.1
-      bs0d = 0.02
-      bs0 = 0.15
-      bu0d = 0.01
-      bu0 = 0.1
+      bu0 = 0.5
+      bs0 = 0.1
 
-
+      w0d = 0.001
+      bu0d = 0.001
+      bs0d = 0.002
+      
       w(1) = w0
       bu(1) = bu0
       bs(1) = bs0
