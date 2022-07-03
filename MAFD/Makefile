@@ -1,9 +1,9 @@
 FC = gfortran
 CC = gcc
-driver.exe: driver.f ode5123_adj_MAFD.o  ode5123_tlm.o PUSHPOPDiff.o adStack.o adBuffer.o
-	gfortran -o driver.exe -freal-4-real-16 ode5123_adj_MAFD.o ode5123_tlm.o PUSHPOPDiff.o adStack.o adBuffer.o -freal-4-real-16 driver.f 
-ode5123_adj_MAFD.o: ode5123_adj_MAFD.f95
-	gfortran -c ode5123_adj_MAFD.f95 -freal-4-real-16
+driver.exe: driver.f ode5123_mafd.o  ode5123_tlm.o PUSHPOPDiff.o adStack.o adBuffer.o
+	gfortran -o driver.exe -freal-4-real-16 ode5123_mafd.o ode5123_tlm.o PUSHPOPDiff.o adStack.o adBuffer.o -freal-4-real-16 driver.f
+ode5123_mafd.o: ode5123_mafd.f95
+	gfortran -c ode5123_mafd.f95 -freal-4-real-16
 ode5123_tlm.o: ode5123_tlm.f
 	gfortran -c ode5123_tlm.f -freal-4-real-16
 PUSHPOPDiff.o: PUSHPOPDiff.f
@@ -11,6 +11,6 @@ PUSHPOPDiff.o: PUSHPOPDiff.f
 adStack.o: adStack.c
 	gcc -c adStack.c
 adBuffer.o: adBuffer.f
-	gfortran -c adBuffer.f -Wno-argument-mismatch -freal-4-real-16
+	gfortran -c adBuffer.f -fallow-argument-mismatch -freal-4-real-16
 clean:
 	rm *.o

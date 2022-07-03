@@ -17,9 +17,9 @@ C     +                 , bs, bsd, nu, ns, dt)
       REAL wd(nt), bud(nt), bsd(nt)
       INTEGER ii1
       
-      nu = 0.12
-      ns = 0.012
-      dt = 0.1
+C      nu = 0.12
+C      ns = 0.012
+C      dt = 0.1
 C
 
 C
