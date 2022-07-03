@@ -1,0 +1,6 @@
+rm *.o
+gfortran -c adBuffer.f -Wno-argument-mismatch -freal-4-real-8
+gfortran -c PUSHPOPDiff.f -freal-4-real-8
+gcc -c adStack.c 
+gfortran -o driver.exe ode5123_tlm_adj_lf.f *.o -freal-4-real-8
+./driver.exe
