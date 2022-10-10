@@ -28,27 +28,60 @@ subroutine FARE
     !     end subroutine Fdqvdz
     ! end interface
     !Integer
-    integer :: it
-    integer :: nx, ny, m, nxh, nxp, nxph, nyp, nyph
+    integer :: it, ix, iy, iz
+
+    integer :: nx = 128
+    integer :: ny = 128
+    integer :: m = 101;
+    integer :: nxh = 65
+    integer :: nxp = 86
+    integer ::  nxph =43
+    integer :: nyp = 86
+    integer :: nyph = 43
+    real :: pi = 3.14
 
     real :: Us, Ts, Ths
     real :: Lx, Ly, Lz, dx, dy, dz
-    real :: L, vt, tau, qvs0, qv0
+    real :: L, vt, tau, qv0
     real :: a_squall, f
-    integer :: Ls, qs
+    integer :: Ls, qs, nn
     real :: Tfinal, IM, eps, epsbar, Nz, f_star, g_star, B_star
-    real :: drx, dry, drz
+    real :: drx, dry, drz, zk
 
     !Real
     real :: max_theta, max_pert
     real :: xi,yj,da,x_c,y_c,z_c,r_c, ampl_bubble
-    real ,dimension(:), allocatable :: theta_bar, u_bar, v_bar, wrk1D
+
+    real, dimension(128,128,101) :: u,v,w, Theta, ThetaR, qt, qr, qv;
+    real, dimension(101) :: qvini, RC, Mr, ubg, vbg, dqvdz, qvs, theta_bar, u_bar, v_bar, wrk1D, qvs0
+	
+    integer :: Ti, mindt
+    real :: dt0, dt, CFL, N_theta
+    real, dimension(2) :: nu
+
+    complex, dimension(128,128) :: in, wrk
+    complex, dimension(65,128) :: out;
+    ! complex, dimension(43,86) :: wrk;
+    complex, dimension(101) :: tau_z;
+    ! complex, dimension(43,86,101) :: uhat, vhat, what, ThetaRhat, qthat
+    ! complex, dimension(43,86,101) :: u1hat, v1hat, w1hat, ThetaR1hat, qt1hat
+    ! complex, dimension(43,86,101) :: fu1hat, fv1hat, fw1hat, fThetaR1hat, fqt1hat
+    complex, dimension(128,128,101) :: uhat, vhat, what, ThetaRhat, qthat
+    complex, dimension(128,128,101) :: u1hat, v1hat, w1hat, ThetaR1hat, qt1hat
+    complex, dimension(128,128,101) :: fuhat, fvhat, fwhat, fThetaRhat, fqthat
+    complex, dimension(128,128,101) :: fu1hat, fv1hat, fw1hat, fThetaR1hat, fqt1hat
+
+    complex, dimension(43,86,101) :: kx, ky, kk
+    complex, dimension(43,86,101) :: e_nu_1, e_nu_2, e_nu_3
+    complex, dimension(43,86,101) :: e_nu_1uv, e_nu_2uv, e_nu_3uv
+    complex, dimension(43,86,101) :: e_nu_1w, e_nu_2w, e_nu_3w
+    complex, dimension(43,86,100) :: a, b, c, rhat, phat
 
 !----------------PARAMETERS----------------------------------------------
     !Grid size:
-    nx  = 128; ny  = 128; m  = 100+1;
-    nxh = nx/2+1; nxp = nx/3; nxp = 2*nxp+1; nxph = (nxp-1)/2+1;
-    nyp = ny/3; nyp = 2*nyp+1; nyph = (nyp-1)/2+1;
+    ! nx  = 128; ny  = 128; m  = 100+1;
+    ! nxh = nx/2+1; nxp = nx/3; nxp = 2*nxp+1; nxph = (nxp-1)/2+1;
+    ! nyp = ny/3; nyp = 2*nyp+1; nyph = (nyp-1)/2+1;
 
     !Quantity scales:
     Us = 100/9; !In m/s
@@ -126,33 +159,6 @@ subroutine FARE
 
 !-------Allocation----------------------
 
-	!Real
-	allocate(u(nx,ny,m)); allocate(v(nx,ny,m)); allocate(w(nx,ny,m)); allocate(Theta(nx,ny,m));	
-	allocate(ThetaR(nx,ny,m)); allocate(qv(nx,ny,m)); allocate(qr(nx,ny,m)); allocate(qt(nx,ny,m));
-	allocate(qvini(m)); allocate(RC(m)); allocate(Mr(m)); allocate(ubg(m)); allocate(vbg(m)); 
-	allocate(dqvdz(m)); allocate(qvs(m));
-	allocate(theta_bar(m)); allocate(u_bar(m)); allocate(v_bar(m));
-	allocate(wrk1D(m));
-	
-	!Complex
-	allocate(in(nx,ny)); allocate(out(nxh,ny));
-	allocate(wrk(nxph,nyp)); allocate(tau_z(m));
-	allocate(uhat(nxph,nyp,m)); allocate(vhat(nxph,nyp,m)); allocate(what(nxph,nyp,m)); 
-	allocate(ThetaRhat(nxph,nyp,m)); allocate(qthat(nxph,nyp,m));
-	allocate(u1hat(nxph,nyp,m)); allocate(v1hat(nxph,nyp,m)); allocate(w1hat(nxph,nyp,m)); 
-	allocate(ThetaR1hat(nxph,nyp,m)); allocate(qt1hat(nxph,nyp,m));
-	allocate(fuhat(nxph,nyp,m)); allocate(fvhat(nxph,nyp,m)); allocate(fwhat(nxph,nyp,m)); 
-	allocate(fThetaRhat(nxph,nyp,m)); allocate(fqthat(nxph,nyp,m));
-	allocate(fu1hat(nxph,nyp,m)); allocate(fv1hat(nxph,nyp,m)); allocate(fw1hat(nxph,nyp,m)); 
-	allocate(fThetaR1hat(nxph,nyp,m)); allocate(fqt1hat(nxph,nyp,m));
-	allocate(kx(nxph,nyp,m)); allocate(ky(nxph,nyp,m)); allocate(kk(nxph,nyp,m));
-	allocate(e_nu_1(nxph,nyp,m)); allocate(e_nu_2(nxph,nyp,m)); allocate(e_nu_3(nxph,nyp,m));
-	allocate(e_nu_1uv(nxph,nyp,m)); allocate(e_nu_2uv(nxph,nyp,m)); allocate(e_nu_3uv(nxph,nyp,m));
-	allocate(e_nu_1w(nxph,nyp,m)); allocate(e_nu_2w(nxph,nyp,m)); allocate(e_nu_3w(nxph,nyp,m));
-	allocate(a(nxph,nyp,m-1));  allocate(b(nxph,nyp,m-1));  allocate(c(nxph,nyp,m-1)); 
-	allocate(rhat(nxph,nyp,m-1)); allocate(phat(nxph,nyp,m-1));
-
-    real, dimension()
 !-------------------FFTW PACKAGE-----------------------------------------
 
 !---------------GENERATING RANDOM NUMBERS FOR THE PERTURBATION-----------------------------------
@@ -209,7 +215,7 @@ subroutine FARE
     !!!!!!!!!!!!!!!Pressure solver !!!!
     !Three diagonals for Thomas' method
     !Main diagonal (entries from 1 to m-1), to compute variables in the staggered grid, level at p
-    b = - ( kk + 1/dz**2);
+    b = - ( kk(:,:,:m-1) + 1/dz**2);
     b(:,:,2:m-2) = b(:,:,2:m-2) - 1/dz**2;
     b(1,1,1) = 1/dz**2; ! 1; !Pendiente
     b(1,1,m-1) = -1/dz**2;
@@ -329,7 +335,7 @@ subroutine FARE
         N_theta = ( 81+8.1*maxval( abs( ( theta_bar(4:m-1)-theta_bar(2:m-3) )/(2*dz) ) ) )**0.5;
 
         dt = dt0; 
-        dt = min(dt, CFL/max( maxval( sqrt(u*u/(dx**2)+v*v/(dy**2)+w*w/(dz**2)) ) , maxval(abs(u)/dx+abs(v)/dy+abs(w)/dz) , 1) ); 
+        dt = min(dt, CFL/max( maxval( sqrt(u*u/(dx**2)+v*v/(dy**2)+w*w/(dz**2)) ) , maxval(abs(u)/dx+abs(v)/dy+abs(w)/dz) , 1.0) ); 
         dt = min( dt, pi/(10*N_theta) );
         e_nu_1 = exp(dt/3*(-nu(1)*kk**2 - nu(2)*2/dz**2 ));
         e_nu_2 = e_nu_1**2;
@@ -354,8 +360,9 @@ subroutine FARE
         !---------------------------------------------------
         !---- RK3 for momentum equations start ---------
         !****- RK1  start ********************************
-        call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,uhat,vhat,what,ThetaRhat,qthat,u,v,w,ThetaR,qt,&
-        fuhat,fvhat,fwhat,fThetaRhat,fqthat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        ! call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,uhat,vhat,what,ThetaRhat,qthat,u,v,w,ThetaR,qt,&
+        ! fuhat,fvhat,fwhat,fThetaRhat,fqthat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        print*, "rk_flux"
         
         u1hat = (uhat + dt/3*fuhat)*e_nu_1uv;
         v1hat = (vhat + dt/3*fvhat)*e_nu_1uv;		
@@ -367,7 +374,8 @@ subroutine FARE
         rhat(:,:,1:m-1) = IM*kx(:,:,1:m-1)*u1hat(:,:,1:m-1)+IM*ky(:,:,1:m-1)*v1hat(:,:,1:m-1)+(w1hat(:,:,2:m)-w1hat(:,:,1:m-1))/dz;
         phat = 0;
 
-        call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);
+        ! call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);
+        print*, "thomas poisson"
 
         !***- Update veloctiy field ----------------------
         u1hat(:,:,1:m-1) = u1hat(:,:,1:m-1) - IM*kx(:,:,1:m-1)*phat;
@@ -407,8 +415,9 @@ subroutine FARE
 
         !************  RK1 end ***********************************
         !****- RK2  start ********************************
-        call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,u1hat,v1hat,w1hat,ThetaR1hat,qt1hat,u,v,w,ThetaR,qt,&
-        fu1hat,fv1hat,fw1hat,fThetaR1hat,fqt1hat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        ! call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,u1hat,v1hat,w1hat,ThetaR1hat,qt1hat,u,v,w,ThetaR,qt,&
+        ! fu1hat,fv1hat,fw1hat,fThetaR1hat,fqt1hat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        print*, "rk_flux"
         
         u1hat = uhat*e_nu_2uv + 2/3*dt*fu1hat*e_nu_1uv;
         v1hat = vhat*e_nu_2uv + 2/3*dt*fv1hat*e_nu_1uv;
@@ -420,7 +429,8 @@ subroutine FARE
         rhat(:,:,1:m-1) = IM*kx(:,:,1:m-1)*u1hat(:,:,1:m-1)+IM*ky(:,:,1:m-1)*v1hat(:,:,1:m-1)+(w1hat(:,:,2:m)-w1hat(:,:,1:m-1))/dz;
         phat = 0;
 
-        call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);
+        ! call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);
+        print*, "thomas poisson"
 
         !*************************************************
         !***- Update veloctiy field ----------------------
@@ -461,8 +471,9 @@ subroutine FARE
             !------------------------
         !************  RK2 end ***************************
         !****- RK3  start ********************************
-        call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,u1hat,v1hat,w1hat,ThetaR1hat,qt1hat,u,v,w,ThetaR,qt,&
-        fu1hat,fv1hat,fw1hat,fThetaR1hat,fqt1hat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        ! call RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vt,u1hat,v1hat,w1hat,ThetaR1hat,qt1hat,u,v,w,ThetaR,qt,&
+        ! fu1hat,fv1hat,fw1hat,fThetaR1hat,fqt1hat,RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
+        print*, "rk_flux"
         
         uhat = uhat*e_nu_3uv + dt/4*fuhat*e_nu_3uv + 3/4*dt*fu1hat*e_nu_1uv;
         vhat = vhat*e_nu_3uv + dt/4*fvhat*e_nu_3uv + 3/4*dt*fv1hat*e_nu_1uv;
@@ -474,7 +485,8 @@ subroutine FARE
         rhat(:,:,1:m-1) = IM*kx(:,:,1:m-1)*uhat(:,:,1:m-1)+IM*ky(:,:,1:m-1)*vhat(:,:,1:m-1)+(what(:,:,2:m)-what(:,:,1:m-1))/dz;
         phat = 0;
 
-        call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);	
+        ! call Thomas(phat,a,b,c,rhat,nxph,nyp,m-1);
+        print*, "thomas poisson"	
 
         !***- Update veloctiy field ----------------------
         uhat(:,:,1:m-1) = uhat(:,:,1:m-1) - IM*kx(:,:,1:m-1)*phat;
