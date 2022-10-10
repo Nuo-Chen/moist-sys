@@ -17,9 +17,9 @@ C     +                 , bs, bsd, nu, ns, dt)
       REAL wd(nt), bud(nt), bsd(nt)
       INTEGER ii1
       
-      nu = 0.012
-      ns = 0.0012
-      dt = 0.1
+C      nu = 0.12
+C      ns = 0.012
+C      dt = 0.1
 C
 
 C
@@ -55,6 +55,7 @@ C
         bsd(t+1) = bsd(t-1) - dt*2*ns**2*wd(t)
         bs(t+1) = bs(t-1) - ns*ns*w(t)*2*dt
       ENDDO
+      write(15,*) wd(nt),bud(nt), bsd(nt)
 C
       RETURN
       END

@@ -17,14 +17,15 @@ C     +                 , bs, bsb, nu, ns, dt)
       REAL wb(nt), bub(nt), bsb(nt)
       INTEGER branch
       
-      nu = 0.012
-      ns = 0.0012
-      dt = 0.1
+C      nu = 0.12
+C      ns = 0.012
+C      dt = 0.1
 C
 
       
 C leap frog first time step      
       t = 1
+      write(14,*) w(t),bu(t), bs(t)
       IF (bs(t) .LT. bu(t)) THEN
         w(t+1) = w(t) + bu(t)*dt
         CALL PUSHCONTROL1B(0)
@@ -38,6 +39,7 @@ C
       CALL PUSHINTEGER4(t)
 C leap frog          
       DO t=2,nt-1
+        write(14,*) w(t),bu(t), bs(t)
         IF (bs(t) .LT. bu(t)) THEN
           w(t+1) = w(t-1) + bu(t)*2*dt
           CALL PUSHCONTROL1B(0)
@@ -49,6 +51,7 @@ C
         bu(t+1) = bu(t-1) - nu*nu*w(t)*2*dt
         bs(t+1) = bs(t-1) - ns*ns*w(t)*2*dt
       ENDDO
+      write(14,*) w(nt),bu(nt), bs(nt)
 C
 C adjoint
       DO t=nt-1,2,-1

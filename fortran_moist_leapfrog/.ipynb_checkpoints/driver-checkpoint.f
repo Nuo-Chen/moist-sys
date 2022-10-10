@@ -1,3 +1,6 @@
+C 14 for NLM
+C 15 for TLM
+C 16 for ADJ
 c234567
       program driver
 
@@ -12,17 +15,17 @@ c234567
       REAL w0d, bu0d, bs0d
       REAL w0b, bu0b, bs0b
       
-      nu = 0.012
-      ns = 0.0012
+      nu = 0.12
+      ns = 0.012
       dt = 0.1
 C                                                                                                                                 
 
-      w0d = 0.1
+      w0d = 0.0001
       w0 = 0.1
-      bs0d = 0.1
-      bs0 = 0
-      bu0d = 0.1
-      bu0 = 0
+      bs0d = 0.0001
+      bs0 = 0.1
+      bu0d = 0.0001
+      bu0 = 0.5
 
 
       w(1) = w0
