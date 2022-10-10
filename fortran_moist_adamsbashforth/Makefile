@@ -12,5 +12,6 @@ adStack.o: adStack.c
 	gcc -c adStack.c
 adBuffer.o: adBuffer.f
 	gfortran -c adBuffer.f -fallow-argument-mismatch -freal-4-real-16
+	#  gfortran -c adBuffer.f -Wno-argument-mismatch -freal-4-real-16
 clean:
 	rm *.o
