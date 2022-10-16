@@ -367,6 +367,8 @@ SUBROUTINE FARE_D()
       DO iz=1,m
         theta_bar(iz) = SUM(theta(:, :, iz))/(nx*ny)
       END DO
+
+      
       WHERE ((theta_bar(4:m-1)-theta_bar(2:m-3))/(2*dz) .GE. 0.0) 
         abs0 = (theta_bar(4:m-1)-theta_bar(2:m-3))/(2*dz)
       ELSEWHERE
@@ -417,6 +419,9 @@ SUBROUTINE FARE_D()
       ELSE
         dt = dt
       END IF
+
+
+
       arg11(:, :, :) = dt/3*(-(nu(1)*kk**2)-nu(2)*2/dz**2)
       e_nu_1 = EXP(arg11(:, :, :))
       e_nu_2 = e_nu_1**2
