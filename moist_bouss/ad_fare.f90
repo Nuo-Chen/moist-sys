@@ -296,6 +296,60 @@ subroutine simplefare(u, uhat, u1hat, fuhat, fu1hat, rhat, phat, wrk, in, out)
 endsubroutine simplefare
 
 subroutine simple_fare_ad  ! with only u
+	implicit none 
+
+	integer :: it, ix, iy, iz
+
+	integer :: nx = 128
+	integer :: ny = 128
+	integer :: m = 101;
+	! integer :: nxh = 65
+	! integer :: nxp = 86
+	integer ::  nxph = 128!43
+	integer :: nyp = 128 !86
+	integer :: nyph = 64 !43
+	! real :: pi = 3.14
+
+	real :: Us !, Ts, Ths
+	real :: Lx, Ly, Lz, dx, dy, dz
+	real :: f, Ls, Ts
+	! real :: L, vt, tau, qv0
+	! real :: a_squall, f
+	! integer :: Ls, qs, 
+	integer :: nn = 128*128
+	real :: Tfinal, IM!, eps, epsbar, Nz, f_star, g_star, B_star
+	real :: drx, dry, drz, zk
+
+	!Real
+	! real :: max_theta, max_pert
+	! real :: xi,yj,da,x_c,y_c,z_c,r_c, ampl_bubble
+
+	real, dimension(128,128,101) :: u ! ,v,w, Theta, ThetaR, qt, qr, qv;
+	real, dimension(128,128,101) :: a_u ! ,v,w, Theta, ThetaR, qt, qr, qv;
+	! real, dimension(101) :: qvini, RC, Mr, ubg, vbg, dqvdz, qvs, theta_bar, u_bar, v_bar, wrk1D, qvs0
+	real, dimension(101) :: u_bar, ubg
+
+	real :: Ti, mindt
+	real :: dt0, dt, CFL!, N_theta
+	real, dimension(2) :: nu
+
+	real,  dimension(128,128) :: in, wrk, out 
+	real,  dimension(101) :: tau_z;
+	real,  dimension(128,128,101) :: uhat!, vhat, what, ThetaRhat, qthat
+	real,  dimension(128,128,101) :: u1hat!, v1hat, w1hat, ThetaR1hat, qt1hat
+	real,  dimension(128,128,101) :: fuhat!, fvhat, fwhat, fThetaRhat, fqthat
+	real,  dimension(128,128,101) :: fu1hat!, fv1hat, fw1hat, fThetaR1hat, fqt1hat
+	real,  dimension(128,128,101) :: a_uhat!, vhat, what, ThetaRhat, qthat
+	real,  dimension(128,128,101) :: a_u1hat!, v1hat, w1hat, ThetaR1hat, qt1hat
+	real,  dimension(128,128,101) :: a_fuhat!, fvhat, fwhat, fThetaRhat, fqthat
+	real,  dimension(128,128,101) :: a_fu1hat!, fv1hat, fw1hat, fThetaR1hat, fqt1hat
+
+	real,  dimension(128,128,101) :: kx, ky, kk
+	!real,  dimension(43,86,101) :: e_nu_1, e_nu_2, e_nu_3
+	real,  dimension(128,128,101) :: e_nu_1uv, e_nu_2uv, e_nu_3uv
+	!real,  dimension(43,86,101) :: e_nu_1w, e_nu_2w, e_nu_3w
+	real,  dimension(128,128,100) :: a, b, c, rhat, phat
+	real,  dimension(128,128,100) :: a_rhat, a_phat
 	do while ( Ti > 0 )
 
 		!************  RK3 end ***************************
@@ -327,7 +381,7 @@ subroutine simple_fare_ad  ! with only u
 		! 				u, v, w, ThetaR, qt,
 		! 				a_fu1hat, a_fv1hat, a_fw1hat, a_fThetaR1hat, a_fqt1hat,
 		! 				RC,Mr,ubg,vbg,tau,qvs,qvini,dqvdz,in,out,planf)
-		call a_RK_flux((nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,
+		call a_RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,
 						f_star,g_star, a_u1hat, u, a_fu1hat, in,out,planf)
 
 		!****- RK3  start ********************************
