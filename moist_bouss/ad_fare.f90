@@ -357,7 +357,7 @@ subroutine simple_fare_ad  ! with only u
 		!***Neumann boundary condition, what(1)=what(1),what(m)=what(m)***
         !--- Get u1,v1,w1 & ThetaR1 ---
 		do iz = m,1, -1
-			a_u(:,:,iz) = a_uhat(:,:,iz)
+			a_uhat(:,:,iz) = a_u(:,:,iz)
 			! a_in = a_u(:,:,iz)
 			! call dfftw_execute_dft_c2r(planr,a_out,a_in); 
 			! call padm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
