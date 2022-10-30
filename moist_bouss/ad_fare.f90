@@ -325,7 +325,10 @@ subroutine simple_fare_ad  ! with only u
 	! real :: xi,yj,da,x_c,y_c,z_c,r_c, ampl_bubble
 
 	real, dimension(128,128,101) :: u ! ,v,w, Theta, ThetaR, qt, qr, qv;
+<<<<<<< Updated upstream
 	real, dimension(128,128,101) :: a_u ! ,v,w, Theta, ThetaR, qt, qr, qv;
+=======
+>>>>>>> Stashed changes
 	! real, dimension(101) :: qvini, RC, Mr, ubg, vbg, dqvdz, qvs, theta_bar, u_bar, v_bar, wrk1D, qvs0
 	real, dimension(101) :: u_bar, ubg
 
@@ -350,30 +353,122 @@ subroutine simple_fare_ad  ! with only u
 	!real,  dimension(43,86,101) :: e_nu_1w, e_nu_2w, e_nu_3w
 	real,  dimension(128,128,100) :: a, b, c, rhat, phat
 	real,  dimension(128,128,100) :: a_rhat, a_phat
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 	do while ( Ti > 0 )
+
+		do iz = m,1, -1
+			a_wrk = a_ThetaRhat(:,:,iz)/nn
+			call unpadm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
+			call dfftw_execute_dft_r2c(planf,a_out,a_in);
+			a_ThetaR(:,:,iz) = a_in 
+
+			a_wrk = a_qthat(:,:,iz)/nn
+			call unpadm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
+			call dfftw_execute_dft_r2c(planf,a_out,a_in);
+			a_qt(:,:,iz) = a_in 
+		end do 
+
+		a_thetaR = a_thetaR + a_theta
+		a_qr = a_qr + L * a_theta + a_qt 
+		a_qv = a_qv + a_qt 
+		!a_qt = 0
+		do iz = m, 1, -1
+			where (mask0(:,:)) a_qv(:,:,iz) = 0
+			call POPBOOLEANARRAY(mask0, 128**2)
+			a_qt(:,:,iz) = a_qt(:,:,iz) + a_qv(:,:,iz)
+			a_qr(:,:,iz) = a_qr(:,:,iz) - a_qv(:,:,iz)
+			!a_qv(:,:,iz) = 0
+
+			mask(:,:) = qvini(iz) + qt(:,:,iz) .gt. qvs(iz)
+			where (mask(:,:))
+				a_qt(:,:,iz) = a_qt(:,:,iz) + a_qr(:,:,iz)
+				!a_qr(:,:,iz) = 0
+			end where 
+		end do
+		!a_qr = 0
+		!a_theta = 0
 
 		!************  RK3 end ***************************
 		
 		!***Neumann boundary condition, what(1)=what(1),what(m)=what(m)***
         !--- Get u1,v1,w1 & ThetaR1 ---
 		do iz = m,1, -1
+<<<<<<< Updated upstream
 			a_uhat(:,:,iz) = a_u(:,:,iz)
 			! a_in = a_u(:,:,iz)
 			! call dfftw_execute_dft_c2r(planr,a_out,a_in); 
 			! call padm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
 			! a_uhat(:,:,iz) = a_wrk
+=======
+			! a_u(:,:,iz) = a_uhat(:,:,iz)
+			a_in = a_u(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_uhat(:,:,iz) = a_wrk
+
+			a_in = a_v(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_vhat(:,:,iz) = a_wrk
+
+			a_in = a_w(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_what(:,:,iz) = a_wrk
+
+			a_in = a_qt(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_qthat(:,:,iz) = a_wrk
+
+			a_in = a_ThetaR(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_ThetaRhat(:,:,iz) = a_wrk
+>>>>>>> Stashed changes
 		end do 
 
+
 		!***- Update veloctiy field ----------------------
-		a_phat = a_phat - IM*kx(:,:,1:m-1)*a_uhat
+		a_what(:, :, m) = 0.0
+		a_what(:, :, 1) = 0.0
+		a_phat(:, :, 2:m-1) = a_phat(:, :, 2:m-1) - a_what(:, :, 2:m-1)/dz
+		a_phat(:, :, 1:m-2) = a_phat(:, :, 1:m-2) + a_what(:, :, 2:m-1)/dz
+		a_phat = a_phat - IM*ky(:, :, 1:m-1) * a_vhat(:, :, 1:m-1) - IM*kx(:, :, 1: m-1) * a_uhat(:, :, 1:m-1)
 
 		!******- Possion equation for pressure p -*******
 		! a_Thomas: a_phat -> a_rhat
 		call a_Thomas(a_phat,a,b,c,a_rhat,nxph,nyp,m-1)
-		a_uhat(:,:,1:m-1) = IM*kx(:,:,1:m-1) * a_rhat(:,:,1:m-1)
 
-		a_fu1hat = 3/4 * dt * e_nu_1uv * a_uhat  ! k3: k3_bsb = dt*3*bsb(t+1)/4
+		a_uhat(:, :, 1:m-1) = a_uhat(:, :, 1:m-1) + IM*kx(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_vhat(:, :, 1:m-1) = a_vhat(:, :, 1:m-1) + IM*ky(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_what(:, :, 2:m) =   a_what(:, :, 2:m) + a_rhat(:, :, 1:m-1)/dz
+		a_what(:, :, 1:m-1) = a_what(:, :, 1:m-1) - a_rhat(:, :, 1:m-1)/dz
+		!a_rhat(:, :, 1:m-1) = 0.0
+
+		a_fqthat = a_fqthat + dt*e_nu_3/4 * a_qthat
+		a_fqt1hat = a_fqt1hat + dt*3*e_nu_1/4 * a_qthat
+		a_qthat = e_nu_3 * a_qthat
+		a_fThetaRhat = a_fThetaRhat + dt*e_nu_3/4 * a_ThetaRhat
+		a_fThetaR1hat = a_fThetaR1hat + dt*3*e_nu_1/4 * a_ThetaRhat
+		a_ThetaRhat = e_nu_3 * a_ThetaRhat
+		a_fwhat = a_fwhat + dt*e_nu_3w/4 * a_what
+		a_fw1hat = a_fw1hat + dt*3*e_nu_1w/ 4 * a_what
+		a_what = e_nu_3w * a_what
+		a_fvhat = a_fvhat + dt*e_nu_3uv/4 * a_vhat
+		a_fv1hat = a_fv1hat + dt*3*e_nu_1uv/4 * a_vhat
+		a_vhat = e_nu_3uv * a_vhat
+		a_fu1hat = a_fu1hat + dt*3*e_nu_1uv/4 * a_uhat   ! k3: k3_bsb = dt*3*bsb(t+1)/4
+		a_uhat = e_nu_3uv * a_uhat
+
 		a_u1hat = 0.0   						 ! tmp_wb = 0.0
+		a_v1hat = 0.0   
+		a_w1hat = 0.0   
+		a_qt1hat = 0.0   
+		a_ThetaR1hat = 0.0   
 		! a_RK_flux: a_fu1hat -> a_u1hat
 		! call a_RK_flux((nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,
 		! 				f_star,g_star,epsbar,L,B_star,nu,vt,
@@ -388,23 +483,75 @@ subroutine simple_fare_ad  ! with only u
 		!************  RK2 end ***************************
 
 		do iz = m,1, -1
-			a_u(:,:,iz) = a_u1hat(:,:,iz)
-			! a_in = a_u(:,:,iz)
-			! call dfftw_execute_dft_c2r(planr,a_out,a_in); 
-			! call padm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
-			! a_u1hat(:,:,iz) = a_wrk
+			a_in = a_u(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out)
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_u1hat(:,:,iz) = a_wrk
+
+			a_in = a_v(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out)
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_v1hat(:,:,iz) = a_wrk
+
+			a_in = a_w(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out)
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_w1hat(:,:,iz) = a_wrk
+
+			a_in = a_qt(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out)
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_qt1hat(:,:,iz) = a_wrk
+
+			a_in = a_ThetaR(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out)
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_ThetaR1hat(:,:,iz) = a_wrk
 		end do 
 
-		!***- Update veloctiy field ----------------------
-		a_phat = a_phat - IM*kx(:,:,1:m-1)*a_u1hat
+		!***- Update veloctiy field ---------------------
+
+		a_w1hat(:, :, m) = 0.0
+		a_w1hat(:, :, 1) = 0.0
+		a_phat(:, :, 2:m-1) = a_phat(:, :, 2:m-1) - a_w1hat(:, :, 2:m-1)/dz
+		a_phat(:, :, 1:m-2) = a_phat(:, :, 1:m-2) + a_w1hat(:, :, 2:m-1)/dz
+		a_phat = a_phat - IM*ky(:, :, 1:m-1) * a_v1hat(:, :, 1:m-1) - IM*kx(:, :, 1: m-1) * a_u1hat(:, :, 1:m-1)
+
 
 		!******- Possion equation for pressure p -*******
 		call a_Thomas(a_phat,a,b,c,a_rhat,nxph,nyp,m-1)
-		a_u1hat(:,:,1:m-1) = IM*kx(:,:,1:m-1) * a_rhat(:,:,1:m-1)
+		a_u1hat(:, :, 1:m-1) = a_u1hat(:, :, 1:m-1) + IM*kx(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_v1hat(:, :, 1:m-1) = a_v1hat(:, :, 1:m-1) + IM*ky(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_w1hat(:, :, 2:m) =   a_w1hat(:, :, 2:m) + a_rhat(:, :, 1:m-1)/dz
+		a_w1hat(:, :, 1:m-1) = a_w1hat(:, :, 1:m-1) - a_rhat(:, :, 1:m-1)/dz
+		!a_rhat(:, :, 1:m-1) = 0.0
 
 		a_uhat(:,:,1:m-1) = a_uhat(:,:,1:m-1) + a_u1hat(:,:,1:m-1) !bsb(t) = bsb(t) + bsb(t+1) + tmp_bsb
-		a_fu1hat = 2/3*dt *e_nu_1uv * a_u1hat   ! k2:  k2_bsb = dt*2*tmp_bsb/3
-		a_u1hat = 0								! tmp_wb = 0.0
+		a_vhat(:,:,1:m-1) = a_vhat(:,:,1:m-1) + a_v1hat(:,:,1:m-1) 
+		a_what(:,:,1:m-1) = a_what(:,:,1:m-1) + a_w1hat(:,:,1:m-1) 
+		! a_qthat(:,:,1:m-1) = a_qthat(:,:,1:m-1) + a_qt1hat(:,:,1:m-1) 
+		! a_ThetaRhat(:,:,1:m-1) = a_ThetaRhat(:,:,1:m-1) + a_ThetaR1hat(:,:,1:m-1) 
+		
+		!******- Possion equation for pressure p -*******
+		! a_Thomas: a_phat -> a_rhat
+		call a_Thomas(a_phat,a,b,c,a_rhat,nxph,nyp,m-1)
+
+		a_qthat = a_qthat + e_nu_2* a_qt1hat   ! k2:  k2_bsb = dt*2*tmp_bsb/3
+		a_fqt1hat = a_fqt1hat + dt*2*e_nu_1/3 * a_qt1hat
+		a_ThetaRhat = a_ThetaRhat + e_nu_2 * a_ThetaR1hat
+		a_fThetaR1hat = a_fThetaR1hat + dt*2*e_nu_1/3 * a_ThetaR1hat
+		a_what = a_what + e_nu_2w * a_w1hat
+		a_fw1hat = a_fw1hat + dt*2*e_nu_1w/3 * a_w1hat
+		a_vhat = a_vhat + e_nu_2uv * a_v1hat
+		a_fv1hat = fa_v1hat + dt*2*e_nu_1uv/3 * a_v1hat
+		a_uhat = a_uhat + e_nu_2uv * a_u1hat
+		a_fu1hat = a_fu1hat + dt*2*e_nu_1uv/3 * a_u1hat
+		
+		a_v1hat = 0.0  ! tmp_wb = 0.0
+		a_w1hat = 0.0
+		a_qt1hat = 0.0
+		a_ThetaR1hat = 0.0
+		a_u1hat = 0.0							
 
 		! a_RK_flux: a_fu1hat -> a_u1hat
 		call a_RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star, a_u1hat, u, a_fu1hat, in,out,planf)
@@ -414,24 +561,68 @@ subroutine simple_fare_ad  ! with only u
 		!***Neumann boundary condition, w1hat(1)=w1hat(1),w1hat(m)=w1hat(m)***
         !--- Get u1,v1,w1 & ThetaR1 ---
 		do iz = m,1, -1
-			a_u(:,:,iz) = a_u1hat(:,:,iz)
-			! a_in = a_u(:,:,iz)
-			! call dfftw_execute_dft_c2r(planr,a_out,a_in); 
-			! call padm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
-			! a_u1hat(:,:,iz) = a_wrk
+			! a_u(:,:,iz) = a_u1hat(:,:,iz)
+			a_in = a_u(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_u1hat(:,:,iz) = a_wrk
+
+			a_in = a_v(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_v1hat(:,:,iz) = a_wrk
+
+			a_in = a_w(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_w1hat(:,:,iz) = a_wrk
+
+			a_in = a_qt(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_qt1hat(:,:,iz) = a_wrk
+
+			a_in = a_ThetaR(:,:,iz)
+			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
+			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
+			a_ThetaR1hat(:,:,iz) = a_wrk
 		end do 
 
 		!***- Update veloctiy field ----------------------
-		a_phat = a_phat - IM*kx(:,:,1:m-1)*a_u1hat
 
+		a_w1hat(:, :, m) = 0.0
+		a_w1hat(:, :, 1) = 0.0
+		a_phat(:, :, 2:m-1) = a_phat(:, :, 2:m-1) - a_w1hat(:, :, 2:m-1)/dz
+		a_phat(:, :, 1:m-2) = a_phat(:, :, 1:m-2) + a_w1hat(:, :, 2:m-1)/dz
+		a_phat = a_phat - IM*ky(:, :, 1:m-1) * a_v1hat(:, :, 1:m-1) - IM*kx(:, :, 1: m-1) * a_u1hat(:, :, 1:m-1)
+		
 		!******- Possion equation for pressure p -*******
 		! a_Thomas: a_phat -> a_rhat
 		call a_Thomas(a_phat,a,b,c,a_rhat,nxph,nyp,m-1)
-		a_u1hat(:,:,1:m-1) = IM*kx(:,:,1:m-1) * a_rhat(:,:,1:m-1)
 
-		a_fuhat = dt/3*e_nu_1uv * a_u1hat + dt/4*e_nu_3uv * a_uhat ! k1: k1_bsb = dt*bsb(t+1)/4 + dt*tmp_bsb/3
+		a_u1hat(:, :, 1:m-1) = a_u1hat(:, :, 1:m-1) + IM*kx(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_v1hat(:, :, 1:m-1) = a_v1hat(:, :, 1:m-1) + IM*ky(:, :, 1:m-1) * a_rhat(:, :, 1:m-1)
+		a_w1hat(:, :, 2:m) =   a_w1hat(:, :, 2:m) + a_rhat(:, :, 1:m-1)/dz
+		a_w1hat(:, :, 1:m-1) = a_w1hat(:, :, 1:m-1) - a_rhat(:, :, 1:m-1)/dz
+		!a_rhat(:, :, 1:m-1) = 0.0
+
+		a_qthat = a_qthat + e_nu_1 * a_qt1hat  ! k1: k1_bsb = dt*bsb(t+1)/4 + dt*tmp_bsb/3
+		a_fqthat = a_fqthat + dt*e_nu_1/3 * a_qt1hat
+		a_ThetaRhat = a_ThetaRhat + e_nu_1 * a_ThetaR1hat
+		a_fThetaRhat = a_fThetaRhat + dt*e_nu_1/3 * a_ThetaR1hat
+		a_what = a_what + e_nu_1w * a_w1hat
+		a_fwhat = a_fwhat + dt*e_nu_1w/3 * a_w1hat
+		a_vhat = a_vhat + e_nu_1uv * a_v1hat
+		a_fvhat = a_fvhat + dt*e_nu_1uv/3 * a_v1hat
+		a_uhat = a_uhat + e_nu_1uv * a_u1hat
+		a_fuhat = a_fuhat + dt*e_nu_1uv3 * a_u1hat
 
 		a_uhat = a_uhat + a_u1hat  									! bsb(t) = bsb(t) + tmp_bsb
+		a_vhat = a_vhat + a_v1hat
+		a_what = a_what + a_w1hat
+		a_qthat = a_qthat + a_qt1hat
+		a_ThetaRhat = a_ThetaRhat + a_ThetaR1hat
+		
 		! a_RK_flux: a_fuhat -> a_uhat
 		call a_RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star, a_uhat, u, a_fuhat, in,out,planf)
 		!****- RK1  start ********************************
@@ -444,4 +635,150 @@ endsubroutine
 
 
 
+subroutine update_q(Theta, ThetaR, qt, qr, qv)
+	implicit none
+	real, dimension(128,128,101) :: Theta, ThetaR, qt, qr, qv
+	real, dimension(101) :: qvini, qvs
+	real :: L
+	integer :: iz, m
+	logical, dimension(128, 128) :: mask, mask0
+	qvini = 0
+	qvs = 0
+	qr = 0
+	m = 101
+	L = 1005
+	do iz=1,m
+		! where ( qvini(iz)+qt(:,:,iz) > qvs(iz) ) qr(:,:,iz) = qvini(iz)+qt(:,:,iz)-qvs(iz);
+		! qv(:,:,iz) = qt(:,:,iz)-qr(:,:,iz);
+		! where ( qv(:,:,iz)+qvini(iz) < 0 ) qv(:,:,iz) = -qvini(iz);
+		mask(:, :) = qvini(iz) + qt(:,:,iz) .gt. qvs(iz)
+		where (mask(:,:))  qr(:, :, iz) = qvini(iz) + qt(:, :, iz) - qvs(iz)
+		qv(:,:,iz) = qt(:,:,iz)-qr(:,:,iz)
+		call PUSHBOOLEANARRAY(mask0, 128**2)
+		mask0(:, :) = qv(:, :, iz) + qvini(iz) .LT. 0
+	end do
+	qt = qv+qr
+	Theta = ThetaR+L*qr
 
+	a_thetaR = a_thetaR + a_theta
+	a_qr = a_qr + L * a_theta + a_qt 
+	a_qv = a_qv + a_qt 
+	a_qt = 0
+	do iz = m, 1, -1
+		where (mask0(:,:)) a_qv(:,:,iz) = 0
+		call POPBOOLEANARRAY(mask0, 128**2)
+		a_qt(:,:,iz) = a_qt(:,:,iz) + a_qv(:,:,iz)
+		a_qr(:,:,iz) = a_qr(:,:,iz) - a_qv(:,:,iz)
+		a_qv(:,:,iz) = 0
+
+		mask(:,:) = qvini(iz) + qt(:,:,iz) .gt. qvs(iz)
+		where (mask(:,:))
+			a_qt(:,:,iz) = a_qt(:,:,iz) + a_qr(:,:,iz)
+			a_qr(:,:,iz) = 0
+		end where 
+	end do
+	a_qr = 0
+	a_theta = 0
+		
+endsubroutine update_q
+
+subroutine update_w(uhat, vhat, what, phat, ThetaRhat, qthat, uhat, fvhat, fwhat, fThetaRhat, fqthat, fu1hat, fv1hat, fw1hat, fThetaR1hat, fqt1hat)
+	implicit none
+	real, dimension(128,128,101) :: uhat, vhat, what, phat, ThetaRhat, qthat, rhat
+	real, dimension(128,128,101) :: fuhat, fvhat, fwhat, fThetaRhat, fqthat
+	real, dimension(128,128,101) :: fu1hat, fv1hat, fw1hat, fThetaR1hat, fqt1hat
+	real, dimension(128,128,101) :: u1hat, v1hat, w1hat, ThetaR1hat, qt1hat
+
+	integer, dimension(128, 128, 101) :: kx, ky
+	integer :: IM, dz, m, dt
+	integer :: e_nu_3uv, e_nu_3w, e_nu_3
+	integer :: e_nu_1uv, e_nu_1w, e_nu_1
+
+	kx = 8
+	ky = 8
+	IM = 1
+	dz = 10
+	m = 101
+	dt = 1
+	e_nu_3uv = e_nu_3w = e_nu_3 = 1 
+	e_nu_1uv = e_nu_1w = e_nu_1 = 1
+	e_nu_2uv = e_nu_2w = e_nu_2 = 1
+	! rk 1
+	u1hat = uhat*e_nu_1uv + dt/3*fuhat*e_nu_1uv
+	v1hat = vhat*e_nu_1uv + dt/3*fvhat*e_nu_1uv
+	w1hat = what*e_nu_1w + dt/3*fwhat*e_nu_1w		
+	ThetaR1hat = ThetaRhat*e_nu_1 + dt/3*fThetaRhat*e_nu_1
+	qt1hat = qthat*e_nu_1 + dt/3*fqthat*e_nu_1
+	! rk2
+	u1hat = uhat*e_nu_2uv + 2/3*dt*fu1hat*e_nu_1uv;
+	v1hat = vhat*e_nu_2uv + 2/3*dt*fv1hat*e_nu_1uv;
+	w1hat = what*e_nu_2w + 2/3*dt*fw1hat*e_nu_1w;
+	ThetaR1hat = ThetaRhat*e_nu_2 + 2/3*dt*fThetaR1hat*e_nu_1;
+	qt1hat = qthat*e_nu_2 + 2/3*dt*fqt1hat*e_nu_1;
+	! rk3
+	uhat = uhat*e_nu_3uv + dt/4*fuhat*e_nu_3uv + 3/4*dt*fu1hat*e_nu_1uv;
+	vhat = vhat*e_nu_3uv + dt/4*fvhat*e_nu_3uv + 3/4*dt*fv1hat*e_nu_1uv;
+	what = what*e_nu_3w + dt/4*fwhat*e_nu_3w + 3/4*dt*fw1hat*e_nu_1w;
+	ThetaRhat = ThetaRhat*e_nu_3 + dt/4*fThetaRhat*e_nu_3 + 3/4*dt*fThetaR1hat*e_nu_1;
+	qthat = qthat*e_nu_3 + dt/4*fqthat*e_nu_3 + 3/4*dt*fqt1hat*e_nu_1;
+
+	!******- Possion equation for pressure p -*******
+	rhat(:,:,1:m-1) = IM*kx(:,:,1:m-1)*uhat(:,:,1:m-1)+IM*ky(:,:,1:m-1)*vhat(:,:,1:m-1)+(what(:,:,2:m)-what(:,:,1:m-1))/dz;
+	phat = 0;
+
+	phat = rhat ! Thomas
+
+	uhat(:,:,1:m-1) = uhat(:,:,1:m-1) - IM*kx(:,:,1:m-1)*phat
+	vhat(:,:,1:m-1) = vhat(:,:,1:m-1) - IM*ky(:,:,1:m-1)*phat
+	what(:,:,2:m-1) = what(:,:,2:m-1) - (phat(:,:,2:m-1)-phat(:,:,1:m-2))/dz
+	what(:,:,1) = 0
+	what(:,:,m) = 0
+
+	qthat = qthat + e_nu_1*qt1hat
+	fqthat = fqthat + dt*e_nu_1*qt1hat/3
+	ThetaRhat = ThetaRhat + e_nu_1*ThetaR1hat
+	fThetaRhat = fThetaRhat + dt*e_nu_1*ThetaR1hat/3
+	what = what + e_nu_1w*w1hat
+	fwhat = fwhat + dt*e_nu_1w*w1hat/3
+	vhat = vhat + e_nu_1uv*v1hat
+	fvhat = fvhat + dt*e_nu_1uv*v1hat/3
+	uhat = uhat + e_nu_1uv*u1hat
+	fuhat = fuhat + dt*e_nu_1uv*u1hat/3
+	v1hat = 0.0
+	w1hat = 0.0
+	qt1hat = 0.0
+	ThetaR1hat = 0.0
+	u1hat = 0.0
+
+	qthat = qthat + e_nu_2*qt1hat
+	fqt1hat = fqt1hat + dt*2*e_nu_1*qt1hat/3
+	ThetaRhat = ThetaRhat + e_nu_2*ThetaR1hat
+	fThetaR1hat = fThetaR1hat + dt*2*e_nu_1*ThetaR1hat/3
+	what = what + e_nu_2w*w1hat
+	fw1hat = fw1hat + dt*2*e_nu_1w*w1hat/3
+	vhat = vhat + e_nu_2uv*v1hat
+	fv1hat = fv1hat + dt*2*e_nu_1uv*v1hat/3
+	uhat = uhat + e_nu_2uv*u1hat
+	fu1hat = fu1hat + dt*2*e_nu_1uv*u1hat/3
+	v1hat = 0.0
+	w1hat = 0.0
+	qt1hat = 0.0
+	ThetaR1hat = 0.0
+	u1hat = 0.0
+
+	fqthat = fqthat + dt*e_nu_3*qthat/4
+	fqt1hat = fqt1hat + dt*3*e_nu_1*qthat/4
+	qthat = e_nu_3*qthat
+	fThetaRhat = fThetaRhat + dt*e_nu_3*ThetaRhat/4
+	fThetaR1hat = fThetaR1hat + dt*3*e_nu_1*ThetaRhat/4
+	ThetaRhat = e_nu_3*ThetaRhat
+	fwhat = fwhat + dt*e_nu_3w*what/4
+	fw1hat = fw1hat + dt*3*e_nu_1w*what/4
+	what = e_nu_3w*what
+	fvhat = fvhat + dt*e_nu_3uv*vhat/4
+	fv1hat = fv1hat + dt*3*e_nu_1uv*vhat/4
+	vhat = e_nu_3uv*vhat
+	fu1hat = fu1hat + dt*3*e_nu_1uv*uhat/4
+	uhat = e_nu_3uv*uhat
+
+endsubroutine
