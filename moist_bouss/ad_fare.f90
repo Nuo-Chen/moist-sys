@@ -325,10 +325,6 @@ subroutine simple_fare_ad  ! with only u
 	! real :: xi,yj,da,x_c,y_c,z_c,r_c, ampl_bubble
 
 	real, dimension(128,128,101) :: u ! ,v,w, Theta, ThetaR, qt, qr, qv;
-<<<<<<< Updated upstream
-	real, dimension(128,128,101) :: a_u ! ,v,w, Theta, ThetaR, qt, qr, qv;
-=======
->>>>>>> Stashed changes
 	! real, dimension(101) :: qvini, RC, Mr, ubg, vbg, dqvdz, qvs, theta_bar, u_bar, v_bar, wrk1D, qvs0
 	real, dimension(101) :: u_bar, ubg
 
@@ -353,10 +349,6 @@ subroutine simple_fare_ad  ! with only u
 	!real,  dimension(43,86,101) :: e_nu_1w, e_nu_2w, e_nu_3w
 	real,  dimension(128,128,100) :: a, b, c, rhat, phat
 	real,  dimension(128,128,100) :: a_rhat, a_phat
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 	do while ( Ti > 0 )
 
 		do iz = m,1, -1
@@ -396,13 +388,6 @@ subroutine simple_fare_ad  ! with only u
 		!***Neumann boundary condition, what(1)=what(1),what(m)=what(m)***
         !--- Get u1,v1,w1 & ThetaR1 ---
 		do iz = m,1, -1
-<<<<<<< Updated upstream
-			a_uhat(:,:,iz) = a_u(:,:,iz)
-			! a_in = a_u(:,:,iz)
-			! call dfftw_execute_dft_c2r(planr,a_out,a_in); 
-			! call padm(nxh,nxph,ny,nyp,nyph,a_wrk,a_out)
-			! a_uhat(:,:,iz) = a_wrk
-=======
 			! a_u(:,:,iz) = a_uhat(:,:,iz)
 			a_in = a_u(:,:,iz)
 			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
@@ -428,7 +413,6 @@ subroutine simple_fare_ad  ! with only u
 			call dfftw_execute_dft_c2r(planr,a_in,a_out); 
 			call padm(nxh,nxph,ny,nyp,nyph,a_out,a_wrk)
 			a_ThetaRhat(:,:,iz) = a_wrk
->>>>>>> Stashed changes
 		end do 
 
 
