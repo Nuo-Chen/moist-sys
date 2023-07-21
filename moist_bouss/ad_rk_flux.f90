@@ -1,6 +1,8 @@
 subroutine RK_flux(nx,nxh,nxph,ny,nyp,nyph,m,kx,ky,dx,dz,f_star,g_star,epsbar,L,B_star,nu,vrain, &
-	uhat,vhat,what,ThetaRhat,qthat,u,v,w,ThetaR,qt, &
-	fu,fv,fw,fThetaR,fqt,RC,Mr,ubg,vbg,tau,qvs,qvini,fqvdz,in1,out1,planf1)
+  & uhat,vhat,what,ThetaRhat,qthat,u,v,w,ThetaR,qt, &
+	& fu,fv,fw,fThetaR,fqt,RC,Mr,ubg,vbg,tau,qvs,qvini,fqvdz,in1,out1,planf1)
+  use, intrinsic :: iso_c_binding
+	use FFTW3
 	! use, intrinsic :: iso_c_binding
 	! use FFTW3
 	! use mpads
@@ -383,6 +385,8 @@ SUBROUTINE RK_FLUX_D(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
 & ThetaRhat, qthat, u, ud, v, vd, w, wd, ThetaR, ThetaRd, qt, qtd, fu, &
 & fud, fv, fvd, fw, fwd, fThetaR, fThetaRd, fqt, fqtd, rc, mr, ubg, vbg&
 & , tau, qvs, qvini, fqvdz, in1, in1d, out1, planf1)
+use, intrinsic :: iso_c_binding
+use FFTW3
   IMPLICIT NONE
 !Parameters:
 !Integers
@@ -961,7 +965,9 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
 & f_star, g_star, epsbar, l, b_star, nu, vrain, uhat, vhat, what, &
 & ThetaRhat, qthat, u, ub, v, vb, w, wb, ThetaR, ThetaRb, qt, qtb, fu, &
 & fub, fv, fvb, fw, fwb, fThetaR, fThetaRb, fqt, fqtb, rc, mr, ubg, vbg&
-& , tau, qvs, qvini, fqvdz, in1, in1b, out1, planf1)
+& , tau, qvs, qvini, fqvdz, in1, in1b, out1, planr1)
+use, intrinsic :: iso_c_binding
+use FFTW3
   IMPLICIT NONE
 !Parameters:
 !Integers
@@ -1006,7 +1012,7 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   REAL :: temp
   COMPLEX, DIMENSION(nxph, nyp, m-3) :: tempb
   COMPLEX, DIMENSION(nxph, nyp) :: tempb0
-  TYPE(UNKNOWNTYPE) :: planf1
+  TYPE(UNKNOWNTYPE) :: planr1
 !---------------------------------------------
   im = (0,1)
   ns = nx*ny
@@ -1121,8 +1127,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   ! wrkNLb = (0.0,0.0)
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
@@ -1141,7 +1149,7 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   qtb = 0.0
   qtb(:, :, m-1) = qtb(:, :, m-1) + wrkNLb(:, :, m)
   wrkNLb(:, :, m) = (0.0,0.0)
-  qtb(:, :, 1) = qtb(:, :, 1) + REAL(wrkNLb(:, :, 1))
+  qtb(:, :, 1) = qtb(:, :, 1) + wrkNLb(:, :, 1)
   wrkNLb(:, :, 1) = (0.0,0.0)
   qtb(:, :, 1:m-2) = qtb(:, :, 1:m-2) + 0.5*wrkNLb(:, :, 2:m-1)
   qtb(:, :, 2:m-1) = qtb(:, :, 2:m-1) + 0.5*wrkNLb(:, :, 2:m-1)
@@ -1155,8 +1163,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   vb = 0.0
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1175,8 +1185,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   ub = 0.0
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1200,8 +1212,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
 &   )/dz
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
@@ -1222,7 +1236,7 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   ThetaRb(:, :, 2:m-1) = ThetaRb(:, :, 2:m-1) + 0.5*wrkNLb(:, :, 2:m-1)
   wrkNLb(:, :, 2:m-1) = (0.0,0.0)
   DO iz=m-2,1,-1
-    whatb(:, :, iz) = whatb(:, :, iz) - b_star*0.5*fThetaRb(:, :, iz)
+    whatb(:, :, iz) = whatb(:, :, iz) - b_star*0.5*fThetaRb(:, :, iz) !????
     whatb(:, :, iz+1) = whatb(:, :, iz+1)- b_star*0.5*fThetaRb(:, :, iz)
   END DO
   
@@ -1233,8 +1247,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb = wrkNLhatb - im*ky*fThetaRb
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
@@ -1253,8 +1269,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb = wrkNLhatb - im*kx*fThetaRb
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1272,8 +1290,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb(:, :, 1:m-2) = wrkNLhatb(:, :, 1:m-2) + fwb(:, :, 2:m-1)/dz
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
@@ -1290,8 +1310,8 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLb = 2*wrkNL*wrkNLb
   wrkNLb(:, :, m-1) = wrkNLb(:, :, m-1) - wrkNLb(:, :, m)
   wrkNLb(:, :, m) = (0.0,0.0)
-  wb(:, :, 1:m-1) = wb(:, :, 1:m-1) + REAL(0.5*wrkNLb(:, :, 1:m-1))
-  wb(:, :, 2:m) = wb(:, :, 2:m) + REAL(0.5*wrkNLb(:, :, 1:m-1))
+  wb(:, :, 1:m-1) = wb(:, :, 1:m-1) + 0.5*wrkNLb(:, :, 1:m-1)
+  wb(:, :, 2:m) = wb(:, :, 2:m) + 0.5*wrkNLb(:, :, 1:m-1)
   wrkNLb(:, :, 1:m-1) = (0.0,0.0)
   ! a_ThetaR = g_star * 0.5? * a_fw
   wrkNLhatb(:, :, 1:m-2) = wrkNLhatb(:, :, 1:m-2) + g_star*0.5*fwb(:, :&
@@ -1306,8 +1326,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   qrb = 0.0
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1349,8 +1371,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
 &   , 2:m-1)
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1368,8 +1392,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
 &   )
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1406,8 +1432,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb(:, :, 2:m-2) = wrkNLhatb(:, :, 2:m-2) + fvb(:, :, 2:m-2)/dz
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
@@ -1417,7 +1445,7 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
     ! wrkNLb(:, :, iz) = wrkNLb(:, :, iz) + in1b
   END DO
   CALL POPCOMPLEX8ARRAY(wrkNL, nx*ny*m)
-  wb = wb + REAL(CONJG(wrkNL)*wrkNLb)
+  wb = wb + wrkNL*wrkNLb
   wrkNLb = w*wrkNLb
   wrkNLb(:, :, m) = (0.0,0.0)
   wrkNLb(:, :, 1) = (0.0,0.0)
@@ -1443,9 +1471,11 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb(:, :, 2:m-2) = wrkNLhatb(:, :, 2:m-2) + fub(:, :, 2:m-2)/dz
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
-    wrkNLb = in1b(:,:,iz)
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    wrkNLb(:,:,iz) = in1b
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1468,8 +1498,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb = wrkNLhatb - im*ky*fvb
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1484,8 +1516,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb = wrkNLhatb - im*kx*fvb - im*ky*fub
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
@@ -1499,8 +1533,10 @@ SUBROUTINE RK_FLUX_B(nx, nxh, nxph, ny, nyp, nyph, m, kx, ky, dx, dz, &
   wrkNLhatb = wrkNLhatb - im*kx*fub
   DO iz=m,1,-1
     wrk1b = wrkNLhatb(:,:,iz)/ns;
-    call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
-    call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
+    call padm(nxh,nxph,ny,nyp,nyph,wrk1b,out1b)
+    call dfftw_execute_dft_c2r(planr,out1b,in1b)
+    ! call dfftw_execute_dft_r2c(planf1,wrk1b,out1b);
+    ! call unpadm(nxh,nxph,ny,nyp,nyph,out1b,in1b) 
     ! wrk1b = (0.0,0.0)
     ! wrk1b = wrkNLhatb(:, :, iz)/ns
     ! wrkNLhatb(:, :, iz) = (0.0,0.0)
